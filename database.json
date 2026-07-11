@@ -12,11 +12,5 @@
     "status": "Pending",
     "request_time": 1783778379108,
     "expiry": 0
-  },
-  "0805FF32E13A2169": {
-    "model": "CPH2707",
-    "status": "Approved",
-    "request_time": 1783778855238,
-    "expiry": 1784038091960
   }
 }
