@@ -26,6 +26,19 @@ async function syncFromGitHub() {
     } catch (e) {
         if (e.response && e.response.status === 404) await syncToGitHub({});
     }
+    
+    // 🎨 Initialize Default UI Config if not exists
+    if (!localDB["_UI_CONFIG_"]) {
+        localDB["_UI_CONFIG_"] = {
+            title: "DPMods Paid Panel",
+            subtitle: "DPLogin Engine • Date Keys",
+            adminUrl: "https://t.me/dpmods",
+            watermark: "Panel Dev : DPMods",
+            btn1: "GET KEY",
+            btn2: "LOGIN"
+        };
+        await syncToGitHub(localDB);
+    }
 }
 
 async function syncToGitHub(data) {
@@ -69,15 +82,14 @@ app.post('/api/request', async (req, res) => {
 
 app.get('/api/check', async (req, res) => {
     const { hwid } = req.query;
-    if (!localDB[hwid]) return res.json({ status: "LOCKED" });
+    let user = localDB[hwid] || { status: "LOCKED", expiry: 0 };
 
-    let user = localDB[hwid];
     if (user.status === 'Approved' && Date.now() > user.expiry) {
         user.status = 'Expired';
         await syncToGitHub(localDB);
-        return res.json({ status: "Expired" });
     }
-    res.json({ status: user.status, expiry: user.expiry });
+    // 🌐 Send UI Config along with user status
+    res.json({ status: user.status, expiry: user.expiry, config: localDB["_UI_CONFIG_"] });
 });
 
 // TELEGRAM WEBHOOK (Advanced Commands)
@@ -112,13 +124,32 @@ app.post('/tg-webhook', async (req, res) => {
     if (req.body.message && req.body.message.text) {
         const text = req.body.message.text;
         const parts = text.split(' ');
-        const cmd = parts[0]; 
+        const cmd = parts[0].toLowerCase(); 
+        const args = text.substring(cmd.length).trim();
 
+        // 🎨 UI CONTROLLER COMMANDS
+        if (cmd === '/ui') {
+            const conf = localDB["_UI_CONFIG_"];
+            const msg = `🎨 *DPMODS UI CONTROLLER*\n\n*Current Settings:*\n🔹 Title: ${conf.title}\n🔹 Subtitle: ${conf.subtitle}\n🔹 Admin URL: ${conf.adminUrl}\n🔹 Watermark: ${conf.watermark}\n🔹 Btn1: ${conf.btn1}\n🔹 Btn2: ${conf.btn2}\n\n*Commands to Edit:*\n\`/settitle <text>\`\n\`/setsub <text>\`\n\`/seturl <link>\`\n\`/setmark <text>\`\n\`/setbtn1 <text>\`\n\`/setbtn2 <text>\``;
+            axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
+        }
+        else if (['/settitle', '/setsub', '/seturl', '/setmark', '/setbtn1', '/setbtn2'].includes(cmd) && args) {
+            let key = cmd.replace('/set', '');
+            if (key === 'sub') key = 'subtitle';
+            if (key === 'url') key = 'adminUrl';
+            if (key === 'mark') key = 'watermark';
+            
+            localDB["_UI_CONFIG_"][key] = args;
+            await syncToGitHub(localDB);
+            axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `✅ UI Updated!\n*${key}* is now: \`${args}\``, parse_mode: 'Markdown' });
+        }
+        
         // 📊 STATS
-        if (cmd === '/dpbot') {
+        else if (cmd === '/dpbot') {
             let total = 0, active = 0, expired = 0, pending = 0;
-            for(let hwid in localDB) {
-                total++; let s = localDB[hwid].status;
+            for(let key in localDB) {
+                if(key === "_UI_CONFIG_") continue;
+                total++; let s = localDB[key].status;
                 if(s === 'Approved') active++; else if(s === 'Expired') expired++; else if(s === 'Pending') pending++;
             }
             axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `📊 *DPMODS STATS*\n\n👥 Total Users: ${total}\n✅ Active: ${active}\n⏳ Pending: ${pending}\n❌ Expired: ${expired}`, parse_mode: 'Markdown' });
@@ -139,7 +170,7 @@ app.post('/tg-webhook', async (req, res) => {
             if (hwid && localDB[hwid]) {
                 delete localDB[hwid];
                 await syncToGitHub(localDB);
-                axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `🗑️ *DELETED*\nHWID: \`${hwid}\` has been removed from database.`, parse_mode: 'Markdown' });
+                axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `🗑️ *DELETED*\nHWID: \`${hwid}\` has been removed.`, parse_mode: 'Markdown' });
             }
         }
         // 🔍 DIRECT HWID SEARCH
@@ -148,13 +179,9 @@ app.post('/tg-webhook', async (req, res) => {
             if (localDB[hwid]) {
                 const user = localDB[hwid];
                 let dateStr = "Not Approved Yet";
-                if (user.expiry > 0) {
-                    dateStr = new Date(user.expiry).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-                }
+                if (user.expiry > 0) dateStr = new Date(user.expiry).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
                 const msg = `🔍 *USER INFO*\n\n🔑 HWID: \`${hwid}\`\n📱 Model: ${user.model}\n📌 Status: ${user.status}\n⏰ Expiry: ${dateStr}\n\n*Manage Device:*\n\`/edit ${hwid} <days>\`\n\`/remove ${hwid}\``;
                 axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
-            } else {
-                axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `⚠️ HWID \`${hwid}\` not found in database.`, parse_mode: 'Markdown' });
             }
         }
     }
