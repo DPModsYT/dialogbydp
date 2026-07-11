@@ -147,7 +147,10 @@ app.post('/tg-webhook', async (req, res) => {
             const hwid = cmd.substring(1); 
             if (localDB[hwid]) {
                 const user = localDB[hwid];
-                const dateStr = user.expiry > 0 ? new Date(user.expiry).toLocaleString() : 'N/A';
+                let dateStr = "Not Approved Yet";
+                if (user.expiry > 0) {
+                    dateStr = new Date(user.expiry).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                }
                 const msg = `🔍 *USER INFO*\n\n🔑 HWID: \`${hwid}\`\n📱 Model: ${user.model}\n📌 Status: ${user.status}\n⏰ Expiry: ${dateStr}\n\n*Manage Device:*\n\`/edit ${hwid} <days>\`\n\`/remove ${hwid}\``;
                 axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
             } else {
