@@ -4,5 +4,13 @@
     "status": "Approved",
     "request_time": 1783768537394,
     "expiry": 1784027756792
+  },
+  "_UI_CONFIG_": {
+    "title": "DPMods Paid Panel",
+    "subtitle": "DPLogin Engine • Date Keys",
+    "adminUrl": "https://t.me/dpmods",
+    "watermark": "Panel Dev : DPMods",
+    "btn1": "GET KEY",
+    "btn2": "LOGIN"
   }
 }
