@@ -77,7 +77,9 @@ app.post('/api/request', async (req, res) => {
     localDB[hwid] = { model, status: 'Pending', request_time: Date.now(), expiry: 0 };
     await syncToGitHub(localDB);
 
-    const msg = `🔔 <b>NEW DPMODS REQUEST</b>\n\n📱 <b>Model:</b> ${model}\n🔑 <b>HWID:</b> <code>${hwid}</code>\n\n<i>Select duration below:</i>`;
+        // ✨ Updated Message with Custom Command Hint and Footer Watermark
+    const msg = `🔔 <b>NEW DPMODS REQUEST</b>\n\n📱 <b>Model:</b> ${model}\n🔑 <b>HWID:</b> <code>${hwid}</code>\n\n<i>Select duration below or use custom days:</i>\n<code>/approve ${hwid} 100</code>\n\n—\n<i>Panel By DPMods</i>`;
+    
     const inlineKeyboard = {
         inline_keyboard: [
             [{ text: "1 Day", callback_data: `approve_${hwid}_1` }, { text: "3 Days", callback_data: `approve_${hwid}_3` }],
@@ -85,6 +87,7 @@ app.post('/api/request', async (req, res) => {
             [{ text: "Reject / Ban", callback_data: `reject_${hwid}` }]
         ]
     };
+
     
     try {
         // Attempt 1: Try sending with the Aesthetic Image
