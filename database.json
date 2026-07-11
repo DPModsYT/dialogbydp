@@ -12,5 +12,11 @@
     "status": "Pending",
     "request_time": 1783778207625,
     "expiry": 0
+  },
+  "A8FBDBD1A7757483": {
+    "model": "CPH2707",
+    "status": "Pending",
+    "request_time": 1783778379108,
+    "expiry": 0
   }
 }
