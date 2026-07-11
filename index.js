@@ -12,7 +12,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_REPO = process.env.GITHUB_REPO;   
 
 // 🖼️ AESTHETIC BANNER URL
-const BANNER_URL = "https://w0.peakpx.com/wallpaper/384/866/HD-wallpaper-cyberpunk-anime-aesthetic-neon-city.jpg";
+const BANNER_URL = "https://www.dropbox.com/scl/fi/hl63h97m9eliwfnkpdw1n/From-Klickpin.com-Explore-Dreamy-self-care-Sunday-ideas-that-help-you-create-a-beautiful-result-without-overspending-for-your-next-inspiration-bo.jpg?rlkey=188a80bbsdyx7a9xl2md37ywq&st=g46b85f0&dl=1";
 
 const FILE_PATH = 'database.json';
 let fileSha = "";
