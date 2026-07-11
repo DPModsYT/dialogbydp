@@ -11,8 +11,8 @@ const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
 const GITHUB_REPO = process.env.GITHUB_REPO;   
 
-// 🖼️ AESTHETIC BANNER URL
-const BANNER_URL = "https://www.dropbox.com/scl/fi/hl63h97m9eliwfnkpdw1n/From-Klickpin.com-Explore-Dreamy-self-care-Sunday-ideas-that-help-you-create-a-beautiful-result-without-overspending-for-your-next-inspiration-bo.jpg?rlkey=188a80bbsdyx7a9xl2md37ywq&st=p22qnsbq&dl=1";
+// 🖼️ AESTHETIC BANNER URL (Converted dl=1 to raw=1 for Telegram compatibility)
+const BANNER_URL = "https://www.dropbox.com/scl/fi/hl63h97m9eliwfnkpdw1n/From-Klickpin.com-Explore-Dreamy-self-care-Sunday-ideas-that-help-you-create-a-beautiful-result-without-overspending-for-your-next-inspiration-bo.jpg?rlkey=188a80bbsdyx7a9xl2md37ywq&st=p22qnsbq&raw=1";
 
 const FILE_PATH = 'database.json';
 let fileSha = "";
@@ -77,7 +77,6 @@ app.post('/api/request', async (req, res) => {
     localDB[hwid] = { model, status: 'Pending', request_time: Date.now(), expiry: 0 };
     await syncToGitHub(localDB);
 
-    // ✨ Switched to HTML for 100% bug-free formatting
     const msg = `🔔 <b>NEW DPMODS REQUEST</b>\n\n📱 <b>Model:</b> ${model}\n🔑 <b>HWID:</b> <code>${hwid}</code>\n\n<i>Select duration below:</i>`;
     const inlineKeyboard = {
         inline_keyboard: [
@@ -86,14 +85,23 @@ app.post('/api/request', async (req, res) => {
             [{ text: "Reject / Ban", callback_data: `reject_${hwid}` }]
         ]
     };
+    
     try {
+        // Attempt 1: Try sending with the Aesthetic Image
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { 
             chat_id: ADMIN_CHAT_ID, photo: BANNER_URL, caption: msg, parse_mode: 'HTML', reply_markup: inlineKeyboard 
         });
         res.json({ success: true });
-    } catch (e) { 
-        console.error("Request Error:", e.response ? e.response.data : e);
-        res.json({ success: false }); 
+    } catch (photoError) {
+        // Attempt 2 (Fallback): If Image fails, send Text Only so request is never lost
+        try {
+            await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { 
+                chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'HTML', reply_markup: inlineKeyboard 
+            });
+            res.json({ success: true });
+        } catch (textError) {
+            res.json({ success: false }); 
+        }
     }
 });
 
@@ -120,7 +128,6 @@ app.get('/api/check', async (req, res) => {
 // ==========================================
 app.post('/tg-webhook', async (req, res) => {
     try {
-        // 🔘 BUTTON CLICKS HANDLER
         if (req.body.callback_query) {
             const query = req.body.callback_query;
             const data = query.data;
@@ -132,10 +139,19 @@ app.post('/tg-webhook', async (req, res) => {
                     localDB[hwid].status = 'Approved';
                     localDB[hwid].expiry = Date.now() + (parseInt(days) * 24 * 60 * 60 * 1000);
                     await syncToGitHub(localDB);
-                    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, {
-                        chat_id: ADMIN_CHAT_ID, message_id: messageId,
-                        caption: `✅ <b>APPROVED</b>\n🔑 <code>${hwid}</code>\n⏳ Duration: ${days} Days`, parse_mode: 'HTML'
-                    });
+                    
+                    // Fallback handled for both caption and text edit
+                    try {
+                        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, {
+                            chat_id: ADMIN_CHAT_ID, message_id: messageId,
+                            caption: `✅ <b>APPROVED</b>\n🔑 <code>${hwid}</code>\n⏳ Duration: ${days} Days`, parse_mode: 'HTML'
+                        });
+                    } catch (e) {
+                        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+                            chat_id: ADMIN_CHAT_ID, message_id: messageId,
+                            text: `✅ <b>APPROVED</b>\n🔑 <code>${hwid}</code>\n⏳ Duration: ${days} Days`, parse_mode: 'HTML'
+                        });
+                    }
                 }
             } 
             else if (data.startsWith('reject_')) {
@@ -143,18 +159,24 @@ app.post('/tg-webhook', async (req, res) => {
                 if(localDB[hwid]) {
                     localDB[hwid].status = 'Rejected';
                     await syncToGitHub(localDB);
-                    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, { 
-                        chat_id: ADMIN_CHAT_ID, message_id: messageId, 
-                        caption: `❌ <b>REJECTED</b>\n🔑 <code>${hwid}</code>`, parse_mode: 'HTML' 
-                    });
+                    
+                    try {
+                        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, { 
+                            chat_id: ADMIN_CHAT_ID, message_id: messageId, 
+                            caption: `❌ <b>REJECTED</b>\n🔑 <code>${hwid}</code>`, parse_mode: 'HTML' 
+                        });
+                    } catch (e) {
+                        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, { 
+                            chat_id: ADMIN_CHAT_ID, message_id: messageId, 
+                            text: `❌ <b>REJECTED</b>\n🔑 <code>${hwid}</code>`, parse_mode: 'HTML' 
+                        });
+                    }
                 }
             }
         }
 
-        // 💬 TEXT COMMANDS HANDLER
         if (req.body.message && req.body.message.text) {
             const rawText = req.body.message.text.trim();
-            
             const match = rawText.match(/^(\S+)(?:\s+(.*))?$/);
             if (!match) return res.sendStatus(200);
 
@@ -170,12 +192,10 @@ app.post('/tg-webhook', async (req, res) => {
 
             const knownCommands = ['/ui', '/dpbot', '/settitle', '/setsub', '/seturl', '/setmark', '/setbtn1', '/setbtn2', '/edit', '/approve', '/remove', '/delete'];
 
-            // 🎨 UI CONTROLLER
             if (cmd === '/ui') {
                 const msg = `🎨 <b>DPMODS UI CONTROLLER</b>\n\n<b>Current Settings:</b>\n🔹 Title: ${conf.title}\n🔹 Subtitle: ${conf.subtitle}\n🔹 Admin URL: ${conf.adminUrl}\n🔹 Watermark: ${conf.watermark}\n🔹 Btn1: ${conf.btn1}\n🔹 Btn2: ${conf.btn2}\n\n<b>👇 Tap below to copy & edit:</b>\n<code>/settitle ${conf.title}</code>\n<code>/setsub ${conf.subtitle}</code>\n<code>/seturl ${conf.adminUrl}</code>\n<code>/setmark ${conf.watermark}</code>\n<code>/setbtn1 ${conf.btn1}</code>\n<code>/setbtn2 ${conf.btn2}</code>`;
                 await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'HTML' });
             }
-            // UI EDIT COMMANDS
             else if (['/settitle', '/setsub', '/seturl', '/setmark', '/setbtn1', '/setbtn2'].includes(cmd)) {
                 if (!args) {
                     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `⚠️ Please provide text!\nExample: <code>${cmd} DPMods Pro</code>`, parse_mode: 'HTML' });
@@ -192,8 +212,6 @@ app.post('/tg-webhook', async (req, res) => {
                 await syncToGitHub(localDB);
                 await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `✅ UI Updated!\n<b>${key}</b> is now: <code>${args}</code>`, parse_mode: 'HTML' });
             }
-            
-            // 📊 STATS
             else if (cmd === '/dpbot') {
                 let total = 0, active = 0, expired = 0, pending = 0;
                 for(let key in localDB) {
@@ -203,7 +221,6 @@ app.post('/tg-webhook', async (req, res) => {
                 }
                 await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `📊 <b>DPMODS STATS</b>\n\n👥 Total Users: ${total}\n✅ Active: ${active}\n⏳ Pending: ${pending}\n❌ Expired: ${expired}`, parse_mode: 'HTML' });
             }
-            // ✏️ EDIT DURATION
             else if (cmd === '/edit' || cmd === '/approve') {
                 const parts = args.split(' ');
                 const hwid = parts[0]; 
@@ -217,7 +234,6 @@ app.post('/tg-webhook', async (req, res) => {
                     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `⚠️ Use format: <code>${cmd} HWID DAYS</code>`, parse_mode: 'HTML' });
                 }
             }
-            // 🗑️ REMOVE/DELETE DEVICE
             else if (cmd === '/remove' || cmd === '/delete') {
                 const hwid = args.split(' ')[0];
                 if (hwid && localDB[hwid]) {
@@ -228,7 +244,6 @@ app.post('/tg-webhook', async (req, res) => {
                     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { chat_id: ADMIN_CHAT_ID, text: `⚠️ Device not found.`, parse_mode: 'HTML' });
                 }
             }
-            // 🔍 DIRECT HWID SEARCH (100% BULLETPROOF)
             else if (cmd.startsWith('/') && !knownCommands.includes(cmd)) {
                 const hwid = rawCmd.substring(1).toUpperCase(); 
                 if (localDB[hwid]) {
