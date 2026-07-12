@@ -24,5 +24,11 @@
     "status": "Approved",
     "request_time": 1783796701954,
     "expiry": 1792436717575
+  },
+  "5A5AD21643751560": {
+    "model": "CPH2585",
+    "status": "Pending",
+    "request_time": 1783844543217,
+    "expiry": 0
   }
 }
