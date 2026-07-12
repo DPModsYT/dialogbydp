@@ -30,5 +30,11 @@
     "status": "Approved",
     "request_time": 1783844543217,
     "expiry": 1792484560235
+  },
+  "A000435DCF59B579": {
+    "model": "V2311",
+    "status": "Pending",
+    "request_time": 1783844903613,
+    "expiry": 0
   }
 }
