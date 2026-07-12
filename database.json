@@ -36,5 +36,11 @@
     "status": "Approved",
     "request_time": 1783844903613,
     "expiry": 1786350525179
+  },
+  "EE3F472DAF6A12C4": {
+    "model": "SM-S918U",
+    "status": "Pending",
+    "request_time": 1783845161057,
+    "expiry": 0
   }
 }
