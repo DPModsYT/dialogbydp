@@ -42,5 +42,11 @@
     "status": "Approved",
     "request_time": 1783845161057,
     "expiry": 1786350791149
+  },
+  "EB604EEC25F23B7E": {
+    "model": "V2403",
+    "status": "Pending",
+    "request_time": 1783863224760,
+    "expiry": 0
   }
 }
