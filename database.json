@@ -48,5 +48,11 @@
     "status": "Approved",
     "request_time": 1783863224760,
     "expiry": 1785764214646
+  },
+  "C9899A2494B1DFB5": {
+    "model": "V2348",
+    "status": "Pending",
+    "request_time": 1783863992814,
+    "expiry": 0
   }
 }
