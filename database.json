@@ -60,5 +60,11 @@
     "status": "Approved",
     "request_time": 1783866606225,
     "expiry": 1786026625465
+  },
+  "6D0C7E9716171179": {
+    "model": "LE2101",
+    "status": "Pending",
+    "request_time": 1783927130812,
+    "expiry": 0
   }
 }
