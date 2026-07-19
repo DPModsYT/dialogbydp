@@ -66,5 +66,11 @@
     "status": "Approved",
     "request_time": 1783931607527,
     "expiry": 1785227619645
+  },
+  "F170028E093AF229": {
+    "model": "TECNO KL4",
+    "status": "Pending",
+    "request_time": 1784438864751,
+    "expiry": 0
   }
 }
