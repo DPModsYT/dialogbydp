@@ -1,0 +1,40 @@
+{
+  "settings": {
+    "title": "PREMIUM ACCESS",
+    "subtitle": "Copy your Device ID and send it to Admin to buy a key.",
+    "admin_url": "https://t.me/DPModsYT",
+    "banner_url": "https://i.imgur.com/K3yZ8vN.jpg", 
+    "banned_devices": [
+      "a1b2c3d4e5f6g7h8",
+      "1234567890abcdef"
+    ],
+    "maintenance": false
+  },
+  "keys": {
+    "DP-ANIME-001": {
+      "hwid": ["87d7ea7faf897f9f", "f3a2b1c4d5e6f7a8"],
+      "status": "approved",
+      "expiry_date": "2026-12-31"
+    },
+    "DP-VIP-002": {
+      "hwid": ["c8d9e0f1a2b3c4d5"],
+      "status": "approved",
+      "expiry_date": "2026-10-15"
+    },
+    "DP-PRO-003": {
+      "hwid": ["e6f7a8b9c0d1e2f3"],
+      "status": "approved",
+      "expiry_date": "2026-11-20"
+    },
+    "DP-PREM-004": {
+      "hwid": ["9a8b7c6d5e4f3a2b"],
+      "status": "approved",
+      "expiry_date": "2026-09-30"
+    },
+    "DP-LITE-005": {
+      "hwid": ["1f2e3d4c5b6a7980"],
+      "status": "approved",
+      "expiry_date": "2026-08-25"
+    }
+  }
+}
